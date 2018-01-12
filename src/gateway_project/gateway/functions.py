@@ -56,6 +56,9 @@ class ProductRequester(BaseRequester):
     def product_get_one(self, product_id):
         return self.get('products/%s/' % product_id)
 
+    def product_delete_one(self, product_id):
+        return self.delete('products/%s/' % product_id)
+
     def product_get_one_json(self, product_id):
         return self.get_json('products/%s/' % product_id)
 
@@ -69,6 +72,9 @@ class ProductRequester(BaseRequester):
 class CartRequester(BaseRequester):
     def cart_get(self):
         return self.get('cart/')
+
+    def cart_get_all_json(self):
+        return self.get_json('cart/')
 
     def cart_get_one(self, cart_id):
         return self.get('cart/%s/' % cart_id)
@@ -114,6 +120,9 @@ class CheckoutRequester(BaseRequester):
 
     def order_post(self, order_json):
         return self.post('orders/', json=order_json)
+
+    def order_patch(self, order_id, order_json):
+        return self.patch('orders/%s/' % order_id, json=order_json)
 
     def order_get_one(self, order_id):
         return self.get('orders/%s/' % order_id)

@@ -5,6 +5,7 @@ ORDER_STATUS_CHOICES = (
     ('in_progress', 'In Progress'),
     ('shipped', 'Shipped'),
     ('canceled', 'Cancelled'),
+    ('pending', 'Pending'),
 )
 
 CITY_CHOICES = (

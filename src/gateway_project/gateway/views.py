@@ -1,5 +1,6 @@
 from django.views import View
 from django.http import JsonResponse
+from django.http import QueryDict
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 
@@ -43,10 +44,31 @@ class ProductsListView(BaseView):
         page = request.GET.get('page', 1)
         return self.product.product_get(page=page)
 
+@method_decorator(csrf_exempt, name='dispatch')
 class ProductDetailView(BaseView):
     def get(self, request, product_id):
-        logger.info("GET One Products")
+        logger.info("GET One Product")
         return self.product.product_get_one(product_id)
+
+    # def delete(self, request, product_id):
+    #     logger.info("Delete One Product")
+    #
+    #     rn = self.product.product_delete_one(product_id)
+    #     cart_all_json = self.cart.cart_get_all_json()
+    #
+    #     for obj in cart_all_json:
+    #         print('\n \n', obj)
+    #         for i in obj["items"]:
+    #             item_id = i["item_id"]
+    #             if i["product_id"] == product_id:
+    #
+    #                 self.cart.delete_one(item_id)
+    #     return rn
+    #
+
+
+
+
 
 class CategoryListView(BaseView):
     def get(self, request):
@@ -58,7 +80,6 @@ class CategoryDetailView(BaseView):
     def get(self, request, category_id):
         logger.info("GET One Category")
         return self.product.category_get_one(category_id)
-
 
 class CartListView(BaseView):
     def get(self, request):
@@ -75,41 +96,16 @@ class CartDetailView(BaseView):
             one_product_json = self.product.product_get_one_json(product_id)
             i['product'] = one_product_json
 
-        # print('product', one_cart_json)
         logger.info("GET ONE CART")
         return JsonResponse(one_cart_json)
 
     def post(self, request, cart_id):
-        # product_id = request.GET['product_id']
-        # quantity = request.GET['quantity']
         quantity = request.POST.get('quantity')
         product_id = request.POST.get('product_id')
 
-
-        # data = byte_string_to_dict(request.body)
-        # print('data =', data)
-        # print('request = ', request.body)
-
-        print(product_id)
-        print(quantity)
-        cart_json = self.cart.cart_get_one_json(cart_id)
-
-        print('cart_json1', cart_json)
-
         r = {'cart': cart_id, 'product_id': product_id, 'quantity': quantity}
-        rn = self.cart.cart_add(r)
 
-        # cart_json["items"].append({'product_id': 1, 'date_added': '2017-11-10T22:29:21.633920Z', 'quantity': 2})
-        #
-        #
-        #
-        # # print('object', obj)
-        # print('\n cart_json2', cart_json)
-        # rn = self.cart.cart_set(cart_id, cart_json)
-        #
-        #
-        # logger.info("POST ADD ONE PRODUCT")
-        return JsonResponse(r)
+        return self.cart.cart_add(r)
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -142,6 +138,8 @@ class CheckoutListView(BaseView):
         r = {'cart_id': cart_id, 'full_name': full_name, 'email': email, 'phone': phone, 'status':status, 'city': city, 'street':street}
         return self.checkout.order_post(r)
 
+
+
 @method_decorator(csrf_exempt, name='dispatch')
 class CheckoutDetailView(BaseView):
     def get(self, request, order_id):
@@ -151,5 +149,36 @@ class CheckoutDetailView(BaseView):
     def delete(self, request, order_id):
         logger.info("DELETE one Order")
         return self.checkout.order_delete_one(order_id)
+
+    def patch(self, request, order_id):
+        data = QueryDict(request.body)
+        status = data.get('status')
+
+        logger.info("PATCH Order Status")
+
+        order_json = self.checkout.order_get_one_json(order_id)
+        order_json["status"] = status
+
+        return self.checkout.order_patch(order_id, order_json)
+
+
+    def post(self, request, order_id):
+        item_id = request.POST.get('item_id')
+
+        r1 = self.cart.delete_one(item_id)
+
+        order_json = self.checkout.order_get_one_json(order_id)
+        order_json["status"] = 'pending'
+        r2 = self.checkout.order_patch(order_id, order_json)
+
+        r = {"deleting_result": r1.status_code, "status_result": r2.status_code}
+        logger.info("POST WITCH DELETE ITEM FROM CART AND CHANGE STATUS")
+        return JsonResponse(r)
+
+
+
+
+
+
 
 
