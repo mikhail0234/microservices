@@ -142,12 +142,14 @@ class CheckoutListView(BaseView):
         r = {'cart_id': cart_id, 'full_name': full_name, 'email': email, 'phone': phone, 'status':status, 'city': city, 'street':street}
         return self.checkout.order_post(r)
 
-
-
-
+@method_decorator(csrf_exempt, name='dispatch')
 class CheckoutDetailView(BaseView):
     def get(self, request, order_id):
         logger.info("GET One Order")
         return self.checkout.order_get_one(order_id)
+
+    def delete(self, request, order_id):
+        logger.info("DELETE one Order")
+        return self.checkout.order_delete_one(order_id)
 
 

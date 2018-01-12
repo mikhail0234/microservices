@@ -118,6 +118,9 @@ class CheckoutRequester(BaseRequester):
     def order_get_one(self, order_id):
         return self.get('orders/%s/' % order_id)
 
+    def order_delete_one(self, order_id):
+        return self.delete('orders/%s/' % order_id)
+
     def order_get_one_json(self, order_id):
         return self.get_json('orders/%s/' % order_id)
 
