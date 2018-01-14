@@ -9,7 +9,7 @@ storage = Queue()
 class MyThread(Thread):
     def __init__(self, event):
         self.stopped = event
-        # super().__init__()
+        super().__init__()
 
     def _repeat_request(self):
 

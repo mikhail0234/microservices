@@ -1,20 +1,38 @@
 import requests
 from django.http import HttpResponse
+from requests.exceptions import ConnectionError
+import functools
+from rest_framework import status
+import json
 
 
+class ConvertExceptions():
 
-# def pack_one_cart(news, source, comments):
-#     one_cart = news
-#     one_news["source"] = source
-#     one_news["comments"] = comments
-#     return one_news
+    func = None
 
+    def __init__(self, exceptions, replacement=None):
+        self.exceptions = exceptions
+        self.replacement = replacement
+
+    def __get__(self, obj, objtype):
+
+        return functools.partial(self.__call__, obj)
+
+    def __call__(self, *args, **kwargs):
+        if self.func is None:
+            self.func = args[0]
+            return self
+        try:
+            return self.func(*args, **kwargs)
+        except self.exceptions:
+            return self.replacement
 
 
 
 class BaseRequester():
-    def __init__(self, host):
+    def __init__(self, host, service_name):
         self.host = host
+        self.service_name = service_name
 
     def response_convert(self, requests_response):
         django_response = HttpResponse(
@@ -24,29 +42,106 @@ class BaseRequester():
         )
         return django_response
 
-    def get(self, query_string):
-        r = requests.get(self.host + query_string)
-        return self.response_convert(r)
+    def _error_response(self, status_code=503, description=None):
+        return HttpResponse(
+            status=status_code,
+            content=json.dumps(description),
+            content_type='application/json'
+        )
 
+    # def get(self, query_string):
+    #     r = requests.get(self.host + query_string)
+    #     return self.response_convert(r)
+
+    def get(self, query_string="", params=None):
+        try:
+            response = requests.get(self.host + query_string, params=params)
+            return self.response_convert(response)
+        except  requests.exceptions.ConnectionError:
+            description = {
+                "error": "service %s is not available" % self.service_name
+            }
+            status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+            print(status_code)
+            return self._error_response(status_code, description)
+
+
+
+    @ConvertExceptions(ConnectionError, {"service not available": "connection error"})
     def get_json(self, query_string):
-        r = requests.get(self.host + query_string)
-        return r.json()
+        try:
+            response = requests.get(self.host + query_string)
+            return response.json()
+        except requests.exceptions.ConnectionError:
+            description = {
+                "error": "service %s is not available" % self.service_name
+            }
+            status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+            return self._error_response(status_code, description)
+
+            # try:
+            #     response = requests.get(self.host_url + query_string)
+            #     return response.json()
+            # except requests.exceptions.ConnectionError:
+            #     description = {
+            #         "error": "servise %s is not available" % self._servise_name
+            #     }
+            #     return status.HTTP_503_SERVICE_UNAVAILABLE, description
+
+
+        # r = requests.get(self.host + query_string)
+        # return r.json()
 
     def post(self, query_string, json):
-        r = requests.post(self.host + query_string, json=json)
-        return self.response_convert(r)
+
+        try:
+            response = requests.post(self.host + query_string, json=json)
+            return self.response_convert(response)
+        except requests.exceptions.ConnectionError:
+            description = {
+                "error": "service %s is not available" % self.service_name
+            }
+            status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+            return self._error_response(status_code, description)
+
 
     def patch(self, query_string, json):
-        r = requests.patch(self.host + query_string, json=json)
-        return self.response_convert(r)
+
+        try:
+            response = requests.patch(self.host + query_string, json=json)
+            return self.response_convert(response)
+        except requests.exceptions.ConnectionError:
+            description = {
+                "error": "service %s is not available" % self.service_name
+            }
+            status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+            return self._error_response(status_code, description)
+
+
 
     def delete(self, query_string):
-        r = requests.delete(self.host + query_string)
-        return self.response_convert(r)
+
+        try:
+            response = requests.delete(self.host + query_string)
+            return self.response_convert(response)
+        except requests.exceptions.ConnectionError:
+            description = {
+                "error": "service %s is not available" % self.service_name
+            }
+            status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+            return self._error_response(status_code, description)
+
+
+        # r = requests.delete(self.host + query_string)
+        # return self.response_convert(r)
 
 
 
 class ProductRequester(BaseRequester):
+
+    def check(self):
+        return self.get()
+
     def product_get(self, page=1):
         return self.get('products/?page=%s' % page)
 
@@ -70,6 +165,10 @@ class ProductRequester(BaseRequester):
 
 
 class CartRequester(BaseRequester):
+
+    def check(self):
+        return self.get()
+
     def cart_get(self):
         return self.get('cart/')
 
@@ -114,6 +213,8 @@ class CartRequester(BaseRequester):
 
 
 class CheckoutRequester(BaseRequester):
+    def check(self):
+        return self.get()
 
     def order_get(self):
         return self.get('orders/')
