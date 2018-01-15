@@ -53,31 +53,34 @@ class BaseRequester():
     #     r = requests.get(self.host + query_string)
     #     return self.response_convert(r)
 
-    def get(self, query_string="", params=None):
+    def get_check(self, query_string="", params=None):
         try:
             response = requests.get(self.host + query_string, params=params)
             return self.response_convert(response)
-        except  requests.exceptions.ConnectionError:
-            description = {
-                "error": "service %s is not available" % self.service_name
-            }
-            status_code = status.HTTP_503_SERVICE_UNAVAILABLE
-            print(status_code)
-            return self._error_response(status_code, description)
-
-
-
-    @ConvertExceptions(ConnectionError, {"service not available": "connection error"})
-    def get_json(self, query_string):
-        try:
-            response = requests.get(self.host + query_string)
-            return response.json()
         except requests.exceptions.ConnectionError:
             description = {
                 "error": "service %s is not available" % self.service_name
             }
             status_code = status.HTTP_503_SERVICE_UNAVAILABLE
             return self._error_response(status_code, description)
+
+    def get(self, query_string="", params=None):
+        response = requests.get(self.host + query_string, params=params)
+        return self.response_convert(response)
+
+
+    @ConvertExceptions(ConnectionError, {"service not available": "connection error"})
+    def get_json(self, query_string):
+        response = requests.get(self.host + query_string)
+        return response.json()
+
+
+        # except requests.exceptions.ConnectionError:
+        #     description = {
+        #         "error": "service %s is not available" % self.service_name
+        #     }
+        #     status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+        #     return self._error_response(status_code, description)
 
             # try:
             #     response = requests.get(self.host_url + query_string)
@@ -94,43 +97,20 @@ class BaseRequester():
 
     def post(self, query_string, json):
 
-        try:
-            response = requests.post(self.host + query_string, json=json)
-            return self.response_convert(response)
-        except requests.exceptions.ConnectionError:
-            description = {
-                "error": "service %s is not available" % self.service_name
-            }
-            status_code = status.HTTP_503_SERVICE_UNAVAILABLE
-            return self._error_response(status_code, description)
+        response = requests.post(self.host + query_string, json=json)
+        return self.response_convert(response)
 
 
     def patch(self, query_string, json):
 
-        try:
-            response = requests.patch(self.host + query_string, json=json)
-            return self.response_convert(response)
-        except requests.exceptions.ConnectionError:
-            description = {
-                "error": "service %s is not available" % self.service_name
-            }
-            status_code = status.HTTP_503_SERVICE_UNAVAILABLE
-            return self._error_response(status_code, description)
-
+        response = requests.patch(self.host + query_string, json=json)
+        return self.response_convert(response)
 
 
     def delete(self, query_string):
 
-        try:
-            response = requests.delete(self.host + query_string)
-            return self.response_convert(response)
-        except requests.exceptions.ConnectionError:
-            description = {
-                "error": "service %s is not available" % self.service_name
-            }
-            status_code = status.HTTP_503_SERVICE_UNAVAILABLE
-            return self._error_response(status_code, description)
-
+        response = requests.delete(self.host + query_string)
+        return self.response_convert(response)
 
         # r = requests.delete(self.host + query_string)
         # return self.response_convert(r)
@@ -140,10 +120,13 @@ class BaseRequester():
 class ProductRequester(BaseRequester):
 
     def check(self):
-        return self.get()
+        return self.get_check()
 
     def product_get(self, page=1):
         return self.get('products/?page=%s' % page)
+
+    def product_get_all_json(self, page=1):
+        return self.get_json('products/?page=%s' % page)
 
     def product_category_get(self):
         return self.get('category/')
@@ -167,7 +150,7 @@ class ProductRequester(BaseRequester):
 class CartRequester(BaseRequester):
 
     def check(self):
-        return self.get()
+        return self.get_check()
 
     def cart_get(self):
         return self.get('cart/')

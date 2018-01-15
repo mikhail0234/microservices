@@ -1,0 +1,63 @@
+body {
+  min-height: 2000px;
+}
+
+.navbar-static-top2 {
+  margin-bottom: 0px;
+  background-color: #5e73af;
+  border-width: 0px;
+  border-color: #576ca8;
+  border-radius: 0px;
+  background-image:linear-gradient(#5e73af, #5f7fc6 90%), linear-gradient(#5f7fc6, #5e73af);
+}
+
+.navbar-static-top {
+  margin-bottom: 0px;
+  background-color: #5f7fc6;
+  border-width: 0px;
+  border-color: #576ca8;
+  border-width: 0px;
+  background-image:linear-gradient(#5e73af, #5f7fc6 90%), linear-gradient(#5f7fc6, #5e73af);
+  /*background-image:linear-gradient(#b42727, #cc2828 90%), linear-gradient(#cc2828, #b42727);*/
+}
+
+
+.nav-text{
+  color: #ececec;
+  font-size: 10px;
+}
+
+.nav-down-text{
+  color: #ececec;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+
+
+.navbar-default  .navbar-brand {
+  color: #ffffff;
+  font-size: 30px;
+}
+
+
+.navbar-default .navbar-brand:hover {
+  color: #000000;
+}
+
+
+.navbar-default .navbar-nav>li>a {
+    color: #ffffff;
+}
+
+.navbar-default .navbar-nav>li>a:hover {
+    /*color: #ff3840;*/
+}
+
+
+
+.navbar-toggle{
+  color: #ffffff;
+  background-color: #576ca8 !important;
+  border-color: transparent !important;
+}

@@ -38,7 +38,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    'gateway'
+    'easy_thumbnails',
+    'crispy_forms',
+
+    'gateway',
 ]
 
 MIDDLEWARE = [
@@ -118,5 +121,7 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
+
+CRISPY_TEMPLATE_PACK ='bootstrap3'
 
 STATIC_URL = '/static/'

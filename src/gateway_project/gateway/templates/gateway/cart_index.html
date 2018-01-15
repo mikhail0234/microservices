@@ -1,0 +1,99 @@
+{% extends 'gateway/base.html' %}
+
+
+{% load thumbnail %}
+{% load cart_tags %}
+
+{% block content %}
+
+  {% if cart_items %}
+    <div class="container">
+      <div class="row">
+        <div class="col-sm-12">
+          <h1>Корзина</h1>
+
+          <table id="cart" class="table table-hover table-condensed">
+            <thead>
+            <tr>
+              <th style="width:30%">Наименование</th>
+              <th style="width:10%">Цена</th>
+              <th style="width:8%">Количество</th>
+              <th style="width:22%" class="text-center">Подытог</th>
+              <th style="width:10%"></th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for cart_item in cart_items %}
+              <tr>
+                <td data-th="Product">
+                  <div class="row">
+                    <div class="col-sm-2 hidden-xs">
+                      <a href="{% url "products:detail" cart_item.product.slug %}"><img
+                          class="img-responsive"
+                          src="{% thumbnail cart_item.product.image 100x100 crop %}"
+                          alt=""></a>
+                    </div>
+                    <div class="col-sm-10">
+                      <h4 class="nomargin">{{ cart_item.product.name }}</h4>
+                      <p>{{ cart_item.product.perex }}</p>
+                    </div>
+                  </div>
+                </td>
+                <td data-th="Price">${{ cart_item.product.price|floatformat }}</td>
+                <td data-th="Quantity">
+                  <form action="{% url "cart:update" cart_item.id %}" method="post">
+                    {% csrf_token %}
+                    <input class="cart_item_quantity" type="number" name="cart_item_quantity" min="1"
+                           value="{{ cart_item.quantity }}">
+                    <button type="submit" class="btn btn-info btn-sm"><i class="fa fa-refresh"></i>
+                      <span class="glyphicon glyphicon-refresh"></span></button>
+                    </button>
+                  </form>
+                </td>
+                <td data-th="Subtotal" class="text-center">${{ cart_item.total_price|floatformat }}</td>
+                <td class="actions" data-th="">
+                  <form action="{% url "cart:remove" cart_item.product.id %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger btn-sm"><i
+                        class="fa fa-trash-o"></i>
+                      <span class=" glyphicon glyphicon-trash "></span></button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+            </tbody>
+
+            <tfoot>
+            <tr class="visible-xs">
+              <td class="text-center"><strong>Total ${{ cart.price_subtotal|floatformat }}</strong></td>
+            </tr>
+            <tr>
+              <td><a href="/" class="btn btn-default">Продолжить покупки</a></td>
+              <td colspan="2" class="hidden-xs"></td>
+              <td class="hidden-xs text-center"><strong>Итог
+                ${{ cart.price_subtotal|floatformat }}</strong></td>
+              <td><a href="{% url "checkout:index" %}" class="btn btn-primary btn-block">Оформить</a>
+              </td>
+            </tr>
+            </tfoot>
+          </table>
+
+        </div>
+      </div>
+    </div>
+
+  {% else %}
+
+    <div class="container">
+      <div class="row">
+        <div class="col-sm-12">
+          <h2>Корзина</h2>
+          <p> Ваша корзина пустая </p>
+          <a href="{% url "products:index" %}" class="btn btn-primary">Начать шопинг!</a>
+        </div>
+      </div>
+    </div>
+
+  {% endif %}
+
+{% endblock %}

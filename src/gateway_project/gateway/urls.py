@@ -5,7 +5,7 @@ from .views import ProductDetailView, ProductsListView
 from .views import CartListView, CartDetailView
 from .views import CheckoutListView, CheckoutDetailView, CheckoutDetailView2, CartItem
 
-
+app_name = 'gateway'
 urlpatterns = [
 
     url(r'^products/$', ProductsListView.as_view(), name='product-list'),

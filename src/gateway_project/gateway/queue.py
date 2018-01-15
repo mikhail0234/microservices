@@ -22,17 +22,17 @@ class MyThread(Thread):
             Requester.request(method, url, data)
 
     def run(self):
-        while not self.stopped.wait(4):
+        while not self.stopped.wait(7):
             self._repeat_request()
 
 class Requester:
     def request(method, url, data):
         if method == 'POST':
-            return requests.post(url, json=data)
+            return requests.post(url, data=data)
         elif method == 'PATCH':
-            return requests.patch(url, json=data)
+            return requests.patch(url, data=data)
         elif method == 'PUT':
-            return requests.put(url, json=data)
+            return requests.put(url, data=data)
         else:
             return requests.delete(url)
 

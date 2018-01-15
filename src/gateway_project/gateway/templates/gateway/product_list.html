@@ -1,0 +1,70 @@
+{% extends 'gateway/base.html' %}
+
+{% load static %}
+{% load thumbnail %}
+
+
+<style>
+    {% block style %}
+
+
+    {% endblock %}
+
+</style>
+
+
+{% block jumbotron %}
+
+<div class="container-fluid  custom-container ">
+  <div class="container-fluid">
+    <img class="b-lazy img-responsive full-w"
+                     src="http://hddfhm.com/images/christmas-header-clipart-14.png"
+
+                     data-src="{% thumbnail object.image 360x480 crop %}"
+                     alt="{{ object.name }}">
+
+  </div>
+</div>
+{% endblock %}
+
+
+{% block content %}
+
+
+<p></p>
+
+
+
+  <div class="container">
+    <div class="row products-row">
+      <ul class="product-list">
+        {% for p in products %}
+        <div class="post">
+          <li class="product-list__item col-xs-12 col-sm-6 col-md-4" >
+
+
+            <a href="{% url 'gateway:products/' %}">
+
+              <img class="b-lazy img-responsive full-w"
+                   src="https://image.flaticon.com/icons/png/128/214/214305.png"
+
+                   data-src="{% thumbnail object.image 360x480 crop %}"
+                   alt="{{ p.name }}">
+              <h2>{{ p.name }}</h2>
+              <h2>{{ p.product_id}}</h2>
+
+              <span class="product-list__item__price">${{ p.price }}</span>
+            </a>
+          </li>
+        </div>
+        {% endfor %}
+      </ul>
+    </div>
+
+
+  </div>
+
+
+<p></p>
+<p></p>
+{% endblock %}

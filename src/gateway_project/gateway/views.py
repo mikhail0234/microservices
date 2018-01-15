@@ -7,6 +7,7 @@ from django.http import QueryDict
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.http import HttpResponse
+from django.shortcuts import render
 
 from django.urls import reverse
 from threading import Event
@@ -49,23 +50,47 @@ class BaseView(View):
 
 class ProductsListView(BaseView):
     def get(self, request):
+        context = {}
         try:
             logger.info("GET ALL Products")
             page = request.GET.get('page', '1')
             match = re.match(r'\d+', page)
+
             if not match or page == '0':
                 status_code = 400
-                error_data = {"Validation error": "Page must be positive integer"}
-                return self.error_response(status_code, error_data)
-            return self.product.product_get(page=page)
+
+                context['status_code'] = status_code
+                context['error_short'] = u"Некорректный запрос страницы"
+                context['error_description'] = u"Номер страницы должен быть положительным целым числом"
+                return render(request, 'gateway/error.html', context, status=status_code)
+
+            response =  self.product.product_get(page=page)
+            if response.status_code == 200:
+                # print(response)
+                response_json = json.loads(response.content)
+                # print('JSON', response_json)
+                products = response_json["results"]
+                print('\n products',products)
+                context['products'] = products
+
+            return render(request, 'gateway/product_list.html', context)
+
         except ConnectionError:
             status_code = 503
-            error_data = {"get products error": "products service unavailable"}
-            return self.error_response(status_code, error_data)
+            context['status_code'] = status_code
+            context['error_short'] = u"Сервис недоступен"
+            context['error_description'] = u"Сервис продуктов временно недоступен"
+            return render(request, 'gateway/error.html', context, status=status_code)
+
+
         except Exception as e:
             status_code = 500
-            error_data = {"server error": "internal server error"}
-            return self.error_response(status_code, error_data)
+            context['status_code'] = status_code
+            context['error_short'] = u"Внутреняя ошибка сервера"
+            context[
+                'error_description'] = u"Что-то пошло не так, работоспособность будет восстановлена в ближайшее время"
+            return render(request, 'gateway/error.html', context, status=status_code)
+
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -73,8 +98,15 @@ class ProductDetailView(BaseView):
     def get(self, request, product_id):
         try:
             logger.info("GET One Product")
+            # return self.product.product_get_one_json(product_id)
+            one_product_json = self.product.product_get_one_json(product_id)
+            error = one_product_json.get('detail')
+            if error and error == 'Not found.':
+                status_code = 404
+                error_data = {"Product error": "Not found. product with id = %s" % product_id}
+                return self.error_response(status_code, error_data)
+            return JsonResponse(one_product_json)
 
-            return self.product.product_get_one_json(product_id)
         except ConnectionError:
             status_code = 503
             error_data = {"get products error": "products service unavailable"}
@@ -83,6 +115,8 @@ class ProductDetailView(BaseView):
             status_code = 500
             error_data = {"server error": "internal server error"}
             return self.error_response(status_code, error_data)
+
+
 
     # def delete(self, request, product_id):
     #     logger.info("Delete One Product")
@@ -117,14 +151,9 @@ class ProductDetailView(BaseView):
 #
 class CartListView(BaseView):
     def get(self, request):
-        # logger.info("GET ALL Carts")
-        # return self.cart.cart_get()
 
         try:
             logger.info("GET ALL Carts")
-            # page = request.GET.get('page', '1')
-            # match = re.match(r'\d+', page)
-
             return self.cart.cart_get()
         except ConnectionError:
             print("ConnectionError")
@@ -147,55 +176,46 @@ class CartDetailView(BaseView):
             one_cart_json = self.cart.cart_get_one_json(cart_id)
             error = one_cart_json.get('detail')
 
-
-            print(one_cart_json)
-
-
-
-
             if error and error == 'Not found.':
                 status_code = 404
                 error_data = {"Cart error": "Not found. cart with id = %s" % cart_id}
                 return self.error_response(status_code, error_data)
 
             resp_products_check = self.cart.check()
-            if (resp_products_check.status_code != 200 and resp_products_check.status_code != 404):
 
+            print("Check", resp_products_check)
+            if (resp_products_check.status_code != 200 and resp_products_check.status_code != 404):
                 return JsonResponse(one_cart_json)
             else:
-
-
-
                 for i in one_cart_json["items"]:
-
-
                     product_id = i.get('product_id')
 
                     try:
                         logger.info("GET One Product")
                         one_product_json = self.product.product_get_one_json(product_id)
+                        error = one_product_json.get('service not available')
+                        error2 = one_product_json.get('detail')
 
-                        error = one_product_json.get('service product is not available')
-                        if (error and error == 'service product is not available') :
+                        if (error and error == 'connection error') :
+                            pass
+                        elif (error2 and error2 == 'Not found.'):
                             pass
                         else:
                             print('\n', one_product_json)
                             i["product"] = one_product_json
 
-
-
                     except ConnectionError:
+                        print("ConnectionError")
                         status_code = 503
-                        error_data = {"get product error": "products service unavailable"}
-                        # return self.cart.cart_get_one(cart_id)
-                        return JsonResponse(one_cart_json)
+                        error_data = {"get cart error": "cart service unavailable"}
+                        return self.error_response(status_code, error_data)
+                        # return JsonResponse(one_cart_json)
                     except Exception as e:
                         status_code = 500
                         error_data = {"server error": "internal server error"}
                         print(error_data)
                         # return self.error_response(status_code, error_data)
                         return self.error_response(status_code, error_data)
-
 
                 return JsonResponse(one_cart_json)
 
@@ -207,48 +227,12 @@ class CartDetailView(BaseView):
         except Exception as e:
             status_code = 500
             error_data = {"server error": "internal server error1"}
-            print(one_product_json)
-            # return one_product_json
             return self.error_response(status_code, error_data)
 
-
-        # resp_cart_check = self.cart.check()
-        #
-        # print(resp_cart_check)
-        # if (resp_cart_check.status_code != 200 and resp_cart_check.status_code != 404):
-        #     resp_data = {
-        #         "error": "service cart is not available"
-        #     }
-        #     return JsonResponse(resp_data)
-        # else:
-        #     print('cart', resp_cart_check)
-        #     resp_product_check = self.product.check()
-        #     print('product', resp_product_check)
-        #
-        #     if (resp_product_check.status_code != 200 ):
-        #
-        #         one_cart_json = self.cart.cart_get_one_json(cart_id)
-        #         error = one_cart_json.get('detail')
-        #
-        #         print('error',error)
-        #         print(one_cart_json)
-        #
-        #         if error and error == 'Not found.':
-        #             status_code = 404
-        #             error_data = {"Cart error": "Not found. cart with id = %s" % cart_id}
-        #             return self.error_response(status_code, error_data)
-        #         else:
-        #             return one_cart_json
-        #     else:
-        #         status_code = 404
-        #         print(resp_cart_check)
-        #         error_data = {"wtf": "service cart is not available"}
-        #         return self.error_response(status_code, error_data)
 
     def post(self, request, cart_id):
 
         resp_cart_check = self.cart.check()
-
         print(resp_cart_check)
         if (resp_cart_check.status_code != 200 and resp_cart_check.status_code != 404):
             resp_data = {
@@ -328,7 +312,6 @@ class CheckoutListView(BaseView):
             status_code = 500
             error_data = {"server error": "internal server error"}
             return self.error_response(status_code, error_data)
-
 
 
     def post(self, request):
@@ -427,105 +410,83 @@ class CheckoutDetailView(BaseView):
 
 
     def patch(self, request, order_id):
+
+        data = QueryDict(request.body)
+        status = data.get('status')
+        if not status or status == '':
+            status_code = 400
+            error_data = {"Validation error": "text parameter must not be blank"}
+            return self.error_response(status_code, error_data)
+
+        logger.info("PATCH Order Status")
         try:
-            data = QueryDict(request.body)
-            status = data.get('status')
-            if not status or status == '':
-                status_code = 400
-                error_data = {"Validation error": "text parameter must not be blank"}
-                return self.error_response(status_code, error_data)
-
-            logger.info("PATCH Order Status")
-            try:
-                order_json = self.checkout.order_get_one_json(order_id)
-                order_json["status"] = status
-                return self.checkout.order_patch(order_id, order_json)
-            except ConnectionError:
-                print("ConnectionError")
-                status_code = 503
-                error_data = {"get checkout error": "checkout service unavailable"}
-                return self.error_response(status_code, error_data)
-            except Exception as e:
-                status_code = 500
-                error_data = {"server error": "internal server error"}
-                return self.error_response(status_code, error_data)
-
+            order_json = self.checkout.order_get_one_json(order_id)
+            order_json["status"] = status
+            return self.checkout.order_patch(order_id, order_json)
         except ConnectionError:
+            print("ConnectionError")
             status_code = 503
-            error_data = {"change checkout status error": "cart service unavailable"}
+            error_data = {"get checkout error": "checkout service unavailable"}
             return self.error_response(status_code, error_data)
         except Exception as e:
             status_code = 500
             error_data = {"server error": "internal server error"}
             return self.error_response(status_code, error_data)
+
+
+
 
 
 
 
 
     def post(self, request, order_id):
+        logger.info("POST WITCH DELETE ITEM FROM CART AND CHANGE STATUS")
+        item_id = request.POST.get('item_id')
+        match = re.match(r'\d+', item_id)
+        if not match or item_id == '0':
+            status_code = 400
+            error_data = {"Validation error": "Item_id must be positive integer"}
+            return self.error_response(status_code, error_data)
+
+        item_id = request.POST.get('item_id')
+        match = re.match(r'\d+', item_id)
+        if not match or item_id == '0':
+            status_code = 400
+            error_data = {"Validation error": "Item_id must be positive integer"}
+            return self.error_response(status_code, error_data)
+
+        logger.info("GET One Order")
+        order_json = self.checkout.order_get_one_json(order_id)
+        print(order_json)
+
+
+        error = order_json.get('detail')
+        error2 = order_json.get('service not available')
+        if error2 and error2 == 'connection error':
+            r = {"deleting_result": 503, "status_result": 503}
+            # storage 1
+
+            return JsonResponse(r)
+        elif error and error == 'Not found.':
+            status_code = 404
+            error_data = {"Order error": "Not found. orders with id = %s" % order_id}
+            return self.error_response(status_code, error_data)
+
+
 
         try:
-            item_id = request.POST.get('item_id')
-
-            match = re.match(r'\d+', item_id)
-            if not match or item_id == '0':
-                status_code = 400
-                error_data = {"Validation error": "Item_id must be positive integer"}
-                return self.error_response(status_code, error_data)
-
-            try:
-                logger.info("GET One Order")
-                order_json = self.checkout.order_get_one_json(order_id)
-                error = order_json.get('detail')
-                if error and error == 'Not found.':
-                    status_code = 404
-                    error_data = {"Order error": "Not found. orders with id = %s" % order_id}
-                    return self.error_response(status_code, error_data)
-
-            except ConnectionError:
-                print("ConnectionError")
-                status_code = 503
-                error_data = {"get checkout error": "checkout service unavailable"}
-                return self.error_response(status_code, error_data)
-            except Exception as e:
-                status_code = 500
-                error_data = {"server error": "internal server error"}
-                return self.error_response(status_code, error_data)
-
-            try:
-                r1 = self.cart.delete_one(item_id)
-            except ConnectionError:
-                status_code = 503
-                error_data = {"cart connection error": "cart service unavailable"}
-                return self.error_response(status_code, error_data)
-            except Exception as e:
-                status_code = 500
-                error_data = {"server error": "internal server error"}
-                return self.error_response(status_code, error_data)
-            print(r1.status_code)
-            if (r1.status_code != 200 and r1.status_code != 204):
-                # storage.put(( HOST_URL_GATEWAY + reverse('gateway:order-detail', kwargs={'news_id': news_id}),
-                #              {'text': text}))
-                #
-                # storage.put((HOST_URL_GATEWAY + reverse('gateway:comment_news', kwargs={'news_id': news_id}),
-                #              {'text': text}))
-
-
-                status_code = 503
-            else:
-                status_code = 200
-                order_json["status"] = 'pending'
-                r2 = self.checkout.order_patch(order_id, order_json)
-
-            r = {"deleting_result": r1.status_code, "status_result": status_code}
-            logger.info("POST WITCH DELETE ITEM FROM CART AND CHANGE STATUS")
+            r1 = self.cart.delete_one(item_id)
+            order_json["status"] = 'pending'
+            r2 = self.checkout.order_patch(order_id, order_json)
+            r = {"deleting_result": r1.status_code, "status_result": 200}
             return JsonResponse(r)
 
+
         except ConnectionError:
-            status_code = 503
-            error_data = {"post checkout  error": "checkout service unavailable"}
-            return self.error_response(status_code, error_data)
+            # storage 2
+            r = {"deleting_result": 503, "status_result": 503}
+            return JsonResponse(r)
         except Exception as e:
             status_code = 500
             error_data = {"server error": "internal server error"}
@@ -533,148 +494,67 @@ class CheckoutDetailView(BaseView):
 
 
 
-            # resp_cart_check = self.cart.check()
-        # resp_checkout_check = self.checkout.check()
-        #
-        # print(resp_cart_check)
-        # print(resp_checkout_check)
-        #
-        # if (resp_cart_check.status_code != 200 or resp_checkout_check.status_code != 200) or (resp_cart_check.status_code != 404 or resp_checkout_check.status_code != 404):
-        #     # store_request.put(("POST", HOST_URL_GATEWAY + reverse('servise:orders-list'), data))
-        #     resp_data = {
-        #         "cart": {
-        #             "status_code": 201
-        #         },
-        #         "checkout": {
-        #             "status_code": 200
-        #         }
-        #     }
-        #     return JsonResponse(resp_data)
-        # else:
-        #
-        #
-        #     try:
-        #         item_id = request.POST.get('item_id')
-        #
-        #         match = re.match(r'\d+', item_id)
-        #         if not match or item_id == '0':
-        #             status_code = 400
-        #             error_data = {"Validation error": "Item_id must be positive integer"}
-        #             return self.error_response(status_code, error_data)
-        #
-        #     except ConnectionError:
-        #         status_code = 503
-        #         error_data = {"post checkout  error": "checkout service unavailable"}
-        #         return self.error_response(status_code, error_data)
-        #
-        #     except Exception as e:
-        #         status_code = 500
-        #         error_data = {"server error": "internal server error"}
-        #         return self.error_response(status_code, error_data)
-        #
-        #     try:
-        #         logger.info("GET One Order")
-        #         order_json = self.checkout.order_get_one_json(order_id)
-        #         error = order_json.get('detail')
-        #         if error and error == 'Not found.':
-        #             status_code = 404
-        #             error_data = {"Order error": "Not found. orders with id = %s" % order_id}
-        #             return self.error_response(status_code, error_data)
-        #
-        #     except ConnectionError:
-        #         print("ConnectionError")
-        #         status_code = 503
-        #         error_data = {"get checkout error": "checkout service unavailable"}
-        #         return self.error_response(status_code, error_data)
-        #     except Exception as e:
-        #         status_code = 500
-        #         error_data = {"server error": "internal server error"}
-        #         return self.error_response(status_code, error_data)
-        #
-        #
-        #     try:
-        #         r1 = self.cart.delete_one(item_id)
-        #     except ConnectionError:
-        #         status_code = 503
-        #         error_data = {"cart connection error": "cart service unavailable"}
-        #         return self.error_response(status_code, error_data)
-        #     except Exception as e:
-        #         status_code = 500
-        #         error_data = {"server error": "internal server error"}
-        #         return self.error_response(status_code, error_data)
-        #
-        #     order_json["status"] = 'pending'
-        #     r2 = self.checkout.order_patch(order_id, order_json)
-        #
-        #     r = {"deleting_result": r1.status_code, "status_result": r2.status_code}
-        #     logger.info("POST WITCH DELETE ITEM FROM CART AND CHANGE STATUS")
-        #     return JsonResponse(r)
+
 
 @method_decorator(csrf_exempt, name='dispatch')
 class CheckoutDetailView2(BaseView):
     def post(self, request, order_id):
+        logger.info("POST WITCH DELETE ITEM FROM CART AND CHANGE STATUS")
+        item_id = request.POST.get('item_id')
+
+        print('item_id',item_id)
+        match = re.match(r'\d+', item_id)
+        if not match or item_id == '0':
+            status_code = 400
+            error_data = {"Validation error": "Item_id must be positive integer"}
+            return self.error_response(status_code, error_data)
+
+        item_id = request.POST.get('item_id')
+        match = re.match(r'\d+', item_id)
+        if not match or item_id == '0':
+            status_code = 400
+            error_data = {"Validation error": "Item_id must be positive integer"}
+            return self.error_response(status_code, error_data)
+
+        logger.info("GET One Order")
+        order_json = self.checkout.order_get_one_json(order_id)
+
+
+        error = order_json.get('detail')
+        error2 = order_json.get('service not available')
+        if error2 and error2 == 'connection error':
+            r = {"deleting_result": 503, "status_result": 503}
+            # storage 1
+            data = {'item_id': '51'}
+            storage.put(("POST", HOST_URL_GATEWAY + reverse('gateway:order-detail2', kwargs={'order_id': order_id}), data))
+            print('storage = ', storage)
+            return JsonResponse(r)
+        elif error and error == 'Not found.':
+            status_code = 404
+            error_data = {"Order error": "Not found. orders with id = %s" % order_id}
+            return self.error_response(status_code, error_data)
+
+
+
         try:
-            item_id = request.POST.get('item_id')
-
-            match = re.match(r'\d+', item_id)
-            if not match or item_id == '0':
-                status_code = 400
-                error_data = {"Validation error": "Item_id must be positive integer"}
-                return self.error_response(status_code, error_data)
-
-            try:
-                logger.info("GET One Order")
-                order_json = self.checkout.order_get_one_json(order_id)
-                error = order_json.get('detail')
-                if error and error == 'Not found.':
-                    status_code = 404
-                    error_data = {"Order error": "Not found. orders with id = %s" % order_id}
-                    return self.error_response(status_code, error_data)
-
-            except ConnectionError:
-                print("ConnectionError")
-                status_code = 503
-                error_data = {"get checkout error": "checkout service unavailable"}
-                return self.error_response(status_code, error_data)
-            except Exception as e:
-                status_code = 500
-                error_data = {"server error": "internal server error"}
-                return self.error_response(status_code, error_data)
-
-            try:
-                r1 = self.cart.delete_one(item_id)
-            except ConnectionError:
-                status_code = 503
-                error_data = {"cart connection error": "cart service unavailable"}
-                return self.error_response(status_code, error_data)
-            except Exception as e:
-                status_code = 500
-                error_data = {"server error": "internal server error"}
-                return self.error_response(status_code, error_data)
-            print(r1.status_code)
-            if (r1.status_code != 200 and r1.status_code != 204):
-
-                print("yyyy")
-                print('storage',storage)
-                storage.put(("POST", HOST_URL_GATEWAY + reverse('gateway:order-detail2', kwargs={'item_id': item_id})))
-                print(storage)
-                status_code = 503
-            else:
-                status_code = 200
-
-                print("xxxx")
-                order_json["status"] = 'pending'
-                r2 = self.checkout.order_patch(order_id, order_json)
-
-            r = {"deleting_result": r1.status_code, "status_result": status_code}
-            logger.info("POST WITCH DELETE ITEM FROM CART AND CHANGE STATUS")
+            r1 = self.cart.delete_one(item_id)
+            order_json["status"] = 'pending'
+            r2 = self.checkout.order_patch(order_id, order_json)
+            r = {"deleting_result": r1.status_code, "status_result": 200}
             return JsonResponse(r)
 
+
         except ConnectionError:
-            status_code = 503
-            error_data = {"post checkout  error": "checkout service unavailable"}
-            return self.error_response(status_code, error_data)
+            # storage 2
+            data = {'item_id': item_id}
+            storage.put(("POST", HOST_URL_GATEWAY + reverse('gateway:order-detail2', kwargs={'order_id': order_id}), {"item_id": "51"}))
+            print('storage = ',storage)
+            r = {"deleting_result": 503, "status_result": 503}
+            return JsonResponse(r)
         except Exception as e:
             status_code = 500
-            error_data = {"server error": "internal server errorr"}
+            error_data = {"server error": "internal server error"}
             return self.error_response(status_code, error_data)
+
+
+
