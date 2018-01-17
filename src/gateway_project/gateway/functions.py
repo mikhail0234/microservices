@@ -106,7 +106,6 @@ class BaseRequester():
         response = requests.patch(self.host + query_string, json=json)
         return self.response_convert(response)
 
-
     def delete(self, query_string):
 
         response = requests.delete(self.host + query_string)

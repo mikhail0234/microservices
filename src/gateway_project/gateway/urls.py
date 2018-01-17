@@ -3,7 +3,7 @@ from django.conf.urls import url
 from .views import ProductDetailView, ProductsListView
 # from .views import CategoryDetailView , CategoryListView
 from .views import CartListView, CartDetailView
-from .views import CheckoutListView, CheckoutDetailView, CheckoutDetailView2, CartItem
+from .views import CheckoutListView, CheckoutDetailView, CheckoutDetailView2, CheckoutMakeOrder, CartItem
 
 app_name = 'gateway'
 urlpatterns = [
@@ -20,6 +20,7 @@ urlpatterns = [
 
     url(r'^checkout/(?P<order_id>[0-9]+)/$', CheckoutDetailView.as_view(), name='order-detail'),
     url(r'^checkout2/(?P<order_id>[0-9]+)/$', CheckoutDetailView2.as_view(), name='order-detail2'),
+    url(r'^checkout3/(?P<order_id>[0-9]+)/$', CheckoutMakeOrder.as_view(), name='order-detail3'),
     url(r'^checkout/$', CheckoutListView.as_view(), name='order-list'),
 
 

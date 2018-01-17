@@ -1,0 +1,60 @@
+{% extends 'gateway/base.html' %}
+
+{% load thumbnail %}
+{% load crispy_forms_tags %}
+{% crispy delivery_form delivery_form.helper %}
+
+
+{% block content %}
+  <div class="container">
+
+    <div class="row">
+      <div class="col-sm-12">
+        <div class="page-header">
+          <h2>Оформление заказа</h2>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+
+    <form method="post" action="{% url 'gateway:order-list' %}"   novalidate>
+
+        <div class="col-sm-12 col-md-2 ">
+        </div>
+        <div class="col-sm-12 col-md-8 ">
+          <div class="well">
+            <legend>Введите ваши данные</legend>
+            <p><b>Ваше имя:</b><br>
+                <input name="full_name" size="40">
+            </p>
+              <p><b>Телефон:</b><br>
+                <input name="phone" size="40">
+            </p>
+              <p><b>Email:</b><br>
+                <input name="email" size="40">
+            </p>
+              <p><b>Город:</b><br>
+                <input name="city" size="40">
+            </p>
+            </p>
+              <p><b>Адрес:</b><br>
+                <input name="street" size="40">
+            </p>
+
+            <br/>
+            <br/>
+
+              <input type="hidden" name="cart_id" value=3>
+              <input type="hidden" name="status" value="created">
+
+
+          </div>
+            <button type="submit" class="btn btn-primary btn-lg full-width">Разместить заказ</button>
+        </div>
+
+      </form>
+    </div>
+
+  </div>
+{% endblock %}

@@ -41,7 +41,7 @@ INSTALLED_APPS = [
     'easy_thumbnails',
     'crispy_forms',
 
-    'gateway',
+    'gateway.apps.GatewayConfig',
 ]
 
 MIDDLEWARE = [

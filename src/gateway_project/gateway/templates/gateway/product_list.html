@@ -42,8 +42,7 @@
         <div class="post">
           <li class="product-list__item col-xs-12 col-sm-6 col-md-4" >
 
-
-            <a href="{% url 'gateway:products/' %}">
+            <a href="{% url 'gateway:product-detail' product_id=p.product_id %}">
 
               <img class="b-lazy img-responsive full-w"
                    src="https://image.flaticon.com/icons/png/128/214/214305.png"
@@ -51,8 +50,6 @@
                    data-src="{% thumbnail object.image 360x480 crop %}"
                    alt="{{ p.name }}">
               <h2>{{ p.name }}</h2>
-              <h2>{{ p.product_id}}</h2>
-
               <span class="product-list__item__price">${{ p.price }}</span>
             </a>
           </li>

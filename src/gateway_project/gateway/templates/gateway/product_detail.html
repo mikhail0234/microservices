@@ -25,22 +25,24 @@
 
         <section class="col-sm-12 col-md-4 col-md-push-2">
           <hgroup class="product-detail-head">
-            <h1>{{ object.name }}</h1>
-            <h4 class="product-detail-head__price">${{ object.price|floatformat }}</h4>
+            <h1>{{ product.name }}</h1>
+            <h4 class="product-detail-head__price">Цена: ${{ product.price|floatformat }}</h4>
           </hgroup>
-          <p class="product-detail__desc">{{ object.content }}</p>
-          <form method="post" action="{% url "cart:add" object.pk %}">
+          <p class="product-detail__desc">Информация о продукте: {{ product.content }}</p>
 
-            {% csrf_token %}
-            <div class="product-quantity">
-              {{ form.quantity.errors }}
-              <p>Количество:</p>
-              {{ form.quantity }}
-            </div>
-            <button type="submit" class="btn btn-default full-width btn-buy">
+
+
+            <form method="post"  action="{% url 'gateway:cart' cart_id=3 %}">
+            <button type="submit"  class="btn btn-default full-width btn-buy" >
+                <input type="hidden" name="quantity" value="1">
+                <input type="hidden" name="product_id" value={{ product.product_id }}>
               <i class="fa fa-shopping-bag" aria-hidden="true"></i> &nbsp;Добавить в корзину
             </button>
           </form>
+
+
+
+
         </section>
       </article>
     </div>

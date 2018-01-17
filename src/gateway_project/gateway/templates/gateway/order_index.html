@@ -1,0 +1,205 @@
+{% extends 'gateway/base.html' %}
+
+function calc(){
+   var textValue1 = document.getElementById('input1').value;
+   var textValue2 = document.getElementById('input2').value;
+
+   if($.trim(textValue1) != '' && $.trim(textValue2) != ''){
+      document.getElementById('output').value = textValue1 * textValue2;
+    }
+}
+
+
+{% load thumbnail %}
+
+{% block content %}
+
+
+    <table id="order" class="table table-hover table-condensed">
+            <thead>
+            <tr>
+              <th style="width:70%"></th>
+              <th style="width:30%"></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>
+                    <h4>Имя, фамилия </h4>
+                </td>
+                <td><h4>{{ order.full_name}}</h4></td>
+            </tr>
+            <tr>
+                <td>
+                    <h4>Email </h4>
+                </td>
+                <td><h4>{{ order.email}}</h4></td>
+            </tr>
+            <tr>
+                <td>
+                    <h4>Телефон </h4>
+                </td>
+                <td><h4>{{ order.phone}}</h4></td>
+            </tr>
+            <tr>
+                <td>
+                    <h4>Статус </h4>
+                </td>
+                <td><li class="dropdown">
+
+                    <a href="#" data-toggle="dropdown" class="dropdown-toggle">
+                      <h4>{{ order.status}}</h4>
+                      <b class="caret"></b>
+                    </a>
+                    <style>
+                       li {
+                        list-style-type: none; /* Убираем маркеры */
+                       }
+                       ul {
+                        margin-left: 0; /* Отступ слева в браузере IE и Opera */
+                        padding-left: 0; /* Отступ слева в браузере Firefox, Safari, Chrome */
+                       }
+                      </style>
+                    <ul class="dropdown-menu">
+                      <li>
+                          <form method="post"  action="{% url 'gateway:order-detail3' order_id=order.order_id %}">
+                            <button type="submit"  class="btn btn-default full-width btn-buy" >
+                                <input type="hidden" name="status" value="created">
+                              <i class="fa fa-shopping-bag" aria-hidden="true"></i> &nbsp;Сreated
+                            </button>
+                          </form>
+                      </li>
+                      <li>
+                          <form method="post"  action="{% url 'gateway:order-detail3' order_id=order.order_id %}">
+                            <button type="submit"  class="btn btn-default full-width btn-buy" >
+                                <input type="hidden" name="status" value="pending">
+                              <i class="fa fa-shopping-bag" aria-hidden="true"></i> &nbsp;Pending
+                            </button>
+                          </form>
+                      </li>
+                        <li>
+                            <form method="post"  action="{% url 'gateway:order-detail3' order_id=order.order_id %}">
+                            <button type="submit"  class="btn btn-default full-width btn-buy" >
+                                <input type="hidden" name="status" value="in_progress">
+                              <i class="fa fa-shopping-bag" aria-hidden="true"></i> &nbsp;In progress
+                            </button>
+                          </form>
+                        </li>
+                        <li>
+                            <form method="post"  action="{% url 'gateway:order-detail3' order_id=order.order_id %}">
+                            <button type="submit"  class="btn btn-default full-width btn-buy" >
+                                <input type="hidden" name="status" value="canceled">
+                              <i class="fa fa-shopping-bag" aria-hidden="true"></i> &nbsp;Canceled
+                            </button>
+                          </form>
+                        </li>
+                        <li> <form method="post"  action="{% url 'gateway:order-detail3' order_id=order.order_id %}">
+                            <button type="submit"  class="btn btn-default full-width btn-buy" >
+                                <input type="hidden" name="status" value="shipped">
+                              <i class="fa fa-shopping-bag" aria-hidden="true"></i> &nbsp;Shipped
+                            </button>
+                          </form></li>
+                    </ul>
+                  </li>
+                    </td>
+            </tr>
+            </tbody>
+        </table>
+
+  {% if order.cart.items %}
+    <div class="container">
+      <div class="row">
+        <div class="col-sm-12">
+          <h1>Заказ</h1>
+
+
+
+          <table id="cart" class="table table-hover table-condensed">
+            <thead>
+            <tr>
+              <th style="width:30%">Наименование</th>
+              <th style="width:10%">Цена</th>
+              <th style="width:8%">Количество</th>
+              <th style="width:22%" class="text-center">Подытог</th>
+              <th style="width:10%"></th>
+            </tr>
+            </thead>
+            <tbody>
+             {% for cart_item in order.cart.items %}
+              <tr>
+                <td data-th="Product">
+                  <div class="row">
+                    <div class="col-sm-2 hidden-xs">
+                      <a href=""><img
+                          class="img-responsive"
+                          src="https://image.flaticon.com/icons/png/128/214/214305.png"
+                          alt=""></a>
+                    </div>
+                    <div class="col-sm-10">
+                      <h4 class="nomargin">{{ cart_item.product.name }}</h4>
+                      <p>{{ cart_item.quantity }}</p>
+                    </div>
+                  </div>
+                </td>
+                <td data-th="Price">${{ cart_item.product.price|floatformat }}</td>
+                <td data-th="Quantity">
+                  <form action="">
+
+                    <input class="cart_item_quantity" type="number" name="cart_item_quantity" min="1"
+                           value="{{ cart_item.quantity }}">
+                  </form>
+                </td>
+                <td data-th="Subtotal" class="text-center"></td>
+                <td class="actions" data-th="">
+
+
+                 <form method="post"  action="{% url 'gateway:order-detail2' order_id=order.order_id %}">
+                     <input type="hidden" name="item_id" value={{ cart_item.id}}>
+                    <button href="{% url 'gateway:cart' cart_id=3 %}" type="submit" class="btn btn-danger btn-sm"><i
+                        class="fa fa-trash-o"></i>
+                      <span class=" glyphicon glyphicon-trash "></span></button>
+                  </form>
+
+
+
+
+
+                </td>
+              </tr>
+            {% endfor %}
+            </tbody>
+
+            <tfoot>
+            <tr class="visible-xs">
+              <td class="text-center"><strong>Total ${{ cart.price_subtotal|floatformat }}</strong></td>
+            </tr>
+            <tr>
+              <td><a href="{% url 'gateway:product-list' %}" class="btn btn-default">Продолжить покупки</a></td>
+              <td colspan="2" class="hidden-xs"></td>
+              <td class="hidden-xs text-center"><strong>Итог
+                ${{ cart.price_subtotal|floatformat }}</strong></td>
+              <td><a href="" class="btn btn-primary btn-block">Оформить</a>
+              </td>
+            </tr>
+            </tfoot>
+          </table>
+
+        </div>
+      </div>
+    </div>
+
+  {% else %}
+
+    <div class="container">
+      <div class="row">
+        <div class="col-sm-12">
+          <h2>Корзина</h2>
+
+          <p> Ваша корзина пустая </p>
+        </div>
+      </div>
+    </div>
+
+  {% endif %}
+
+{% endblock %}
