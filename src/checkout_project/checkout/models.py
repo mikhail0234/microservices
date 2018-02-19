@@ -1,5 +1,6 @@
 from django.db import models
 
+
 ORDER_STATUS_CHOICES = (
     ('created', 'Created'),
     ('in_progress', 'In Progress'),
@@ -28,3 +29,5 @@ class Order(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+
+
