@@ -12,6 +12,17 @@ class ProductsListView(generics.ListCreateAPIView):
     serializer_class = ProductSerializer
     pagination_class = ProductsPagination
 
+class ProductCategoryView(generics.ListCreateAPIView):
+
+    serializer_class = ProductSerializer
+    
+
+    def get_queryset(self, *args, **kwargs):
+        if self.kwargs["category_id"]== None:
+            return Product.objects.filter(category = 1)
+        else:
+            return Product.objects.filter(category = self.kwargs["category_id"])
+    
 
 
 class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -20,6 +31,7 @@ class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     lookup_url_kwarg = "product_id"
     lookup_field = "product_id"
+
 
 class CategoryListView(generics.ListCreateAPIView):
     queryset = Product.objects.all()
