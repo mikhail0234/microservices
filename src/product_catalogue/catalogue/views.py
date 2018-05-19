@@ -16,13 +16,12 @@ class ProductCategoryView(generics.ListCreateAPIView):
 
     serializer_class = ProductSerializer
     
-
     def get_queryset(self, *args, **kwargs):
         if self.kwargs["category_id"]== None:
             return Product.objects.filter(category = 1)
         else:
             return Product.objects.filter(category = self.kwargs["category_id"])
-    
+
 
 
 class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -44,6 +43,3 @@ class CategoryDetailView(generics.RetrieveUpdateAPIView):
 
     lookup_url_kwarg = "category_id"
     lookup_field = "category_id"
-
-
-
