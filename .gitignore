@@ -1,3 +1,13 @@
 .idea/
 *.pyc
 __pycache__/
+cart_project/cart/migrations/*
+gateway_project/gateway/migrations/*
+product_catalogue/catalogue/migrations/*
+
+
+
+.venv
+venv-auth/
+venv-gateway/
+venv-cart/
