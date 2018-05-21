@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'oauth2_provider',
+    'rest_framework',
     'corsheaders',
 
 ]
@@ -147,4 +148,13 @@ OAUTH2_PROVIDER = {
     'ACCESS_TOKEN_EXPIRE_SECONDS': 600,
     'REFRESH_TOKEN_EXPIRE_SECONDS': 36000,
     'AUTHORIZATION_CODE_EXPIRE_SECONDS': 600,
+
+    # this is the list of available scopes
+    'SCOPES': {'read': 'Read scope', 'write': 'Write scope', 'groups': 'Access to your groups'}
+}
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
+    )
 }
