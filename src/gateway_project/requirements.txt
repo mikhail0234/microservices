@@ -2,7 +2,7 @@ certifi==2018.4.16
 chardet==3.0.4
 Django==2.0.5
 django-crispy-forms==1.7.2
-djangorestframework==3.8.2
+djangorestframework==3.11.2
 easy-thumbnails==2.5
 idna==2.6
 Pillow==5.1.0
